@@ -17,14 +17,17 @@ This is an entry for the **Congressional App Challenge (CA-14)**. Two-person tea
 - Everything runs locally via `npm run dev` during the build; deploy to Vercel for the live demo URL.
 
 ## Current state (as of Sat Oct 24)
-- **MVP steps 1–3 are built and live** at https://cc-app-ecru.vercel.app (Vercel project `ekam-sandhu/cc-app`), verified end-to-end on mobile width.
+- **MVP steps 1–5 are built and live** at https://cc-app-ecru.vercel.app (staff view at `/staff`; Vercel project `ekam-sandhu/cc-app`), verified end-to-end on mobile width. Next up: step 6 design pass + QR.
+- **Source:** public repo https://github.com/ekamsand21-afk/cc-app (`main` tracks `origin/main`). Commits use the GitHub no-reply email set in this repo's git config. Pushing does **not** deploy — Vercel isn't connected to the repo.
 - Next.js 16 (App Router, TS, Tailwind, no `src/`). This Next version differs from older docs — check `node_modules/next/dist/docs/` before using unfamiliar APIs (see AGENTS.md).
 - Code map:
   - `lib/supabase.ts` — service-role client, guarded by `import "server-only"` so a client import fails the build.
   - `app/api/submit/route.ts` — POST `{ text }`, trimmed, 1–500 chars, inserts with `votes = 1`.
-  - `app/api/submissions/route.ts` — GET, ranked by `votes` desc, `created_at` desc.
+  - `app/api/submissions/route.ts` — GET, ranked by `votes` desc, `created_at` desc. Optional `q` (ILIKE, `%`/`_` escaped), `sort=top|new`, `days=N`. Limit 500.
   - `app/api/vote/route.ts` — POST `{ id }`. supabase-js can't do `votes = votes + 1`, so it does compare-and-swap (`update … where votes = <read value>`) with up to 10 jittered retries. Tested: 20 concurrent votes, zero lost.
-  - `app/page.tsx` — student page (client component): submit form, ranked list, upvote. Voted ids stored in `localStorage` key `voted-submissions`; the author's own submission counts as their vote.
+  - `app/page.tsx` — student page (client component): submit form, debounced search (aborts stale requests), ranked list, upvote. Voted ids stored in `localStorage` key `voted-submissions`; the author's own submission counts as their vote.
+  - `app/staff/page.tsx` (server, sets `noindex` metadata) → `StaffDashboard.tsx` (client): stats, search, time range, sort. Unlisted, not protected. Don't add a `staff/layout.tsx` — a second layout breaks Next 16's generated `LayoutProps` type check against the root layout.
+  - `lib/types.ts` — shared `Submission` type (safe for client import).
 - Env: `.env.local` (git-ignored) holds `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — this must be the **`sb_secret_…`** key, not `sb_publishable_…`. The same two vars are set in Vercel → Production.
 - Supabase: schema below is applied. Tables created in the SQL editor needed explicit grants: `service_role` has select/insert/update/delete on `submissions` and `themes` plus execute on `match_submission`. **Never grant to `anon`** (RLS is off).
 - Deploy is CLI-based from this folder (not git-triggered): `npx vercel@latest deploy --prod`. Vercel rejects CLI versions older than 47.2.2.
