@@ -1,69 +1,167 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+
+type Submission = {
+  id: string;
+  text: string;
+  votes: number;
+  created_at: string;
+};
+
+const VOTED_KEY = "voted-submissions";
+
+// Per-device vote memory. Not tamper-proof (clearing storage resets it), but
+// it stops casual double-voting without making students log in.
+function loadVoted(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(VOTED_KEY) ?? "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveVoted(voted: Set<string>) {
+  try {
+    localStorage.setItem(VOTED_KEY, JSON.stringify([...voted]));
+  } catch {
+    // Storage blocked (private mode etc.) — vote still counts server-side.
+  }
+}
+
+function rank(list: Submission[]) {
+  return [...list].sort(
+    (a, b) => b.votes - a.votes || b.created_at.localeCompare(a.created_at),
+  );
+}
 
 export default function Home() {
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [voted, setVoted] = useState<Set<string>>(loadVoted);
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/submissions")
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then(setSubmissions)
+      .catch(() => setError("Could not load feedback."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  function markVoted(id: string) {
+    setVoted((prev) => {
+      const next = new Set(prev).add(id);
+      saveVoted(next);
+      return next;
+    });
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSubmissions((prev) => rank([data, ...prev]));
+      // The author's own submission already counts as their vote.
+      markVoted(data.id);
+      setText("");
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : "Could not submit.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleVote(id: string) {
+    if (voted.has(id)) return;
+    markVoted(id);
+    setError(null);
+    try {
+      const res = await fetch("/api/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSubmissions((prev) =>
+        rank(prev.map((s) => (s.id === id ? { ...s, votes: data.votes } : s))),
+      );
+    } catch (err) {
+      // Roll back so the student can try again.
+      setVoted((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        saveVoted(next);
+        return next;
+      });
+      setError(err instanceof Error && err.message ? err.message : "Could not vote.");
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+      <h1 className="text-2xl font-bold">School Feedback</h1>
+      <p className="mt-1 text-sm opacity-70">
+        Anonymous. Share what should change, and upvote what you agree with.
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-2">
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          maxLength={500}
+          rows={3}
+          placeholder="What should our school change?"
+          className="w-full rounded border border-current/20 bg-transparent p-3"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+        <button
+          type="submit"
+          disabled={submitting || !text.trim()}
+          className="self-end rounded bg-foreground px-4 py-2 font-medium text-background disabled:opacity-40"
+        >
+          {submitting ? "Submitting…" : "Submit"}
+        </button>
+      </form>
+
+      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+
+      <ul className="mt-8 flex flex-col gap-3">
+        {loading && <li className="opacity-60">Loading…</li>}
+        {!loading && submissions.length === 0 && (
+          <li className="opacity-60">No feedback yet. Be the first.</li>
+        )}
+        {submissions.map((s) => {
+          const hasVoted = voted.has(s.id);
+          return (
+            <li
+              key={s.id}
+              className="flex items-start gap-3 rounded border border-current/15 p-3"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+              <button
+                onClick={() => handleVote(s.id)}
+                disabled={hasVoted}
+                aria-label={hasVoted ? "Already upvoted" : "Upvote"}
+                className="flex min-w-12 flex-col items-center rounded border border-current/20 px-2 py-1 disabled:opacity-50"
+              >
+                <span aria-hidden>▲</span>
+                <span className="font-semibold">{s.votes}</span>
+              </button>
+              <p className="flex-1 whitespace-pre-wrap break-words">{s.text}</p>
+            </li>
+          );
+        })}
+      </ul>
+    </main>
   );
 }
