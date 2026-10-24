@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-type Submission = {
-  id: string;
-  text: string;
-  votes: number;
-  created_at: string;
-};
+import type { Submission } from "@/lib/types";
 
 const VOTED_KEY = "voted-submissions";
 
@@ -39,17 +33,39 @@ export default function Home() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [voted, setVoted] = useState<Set<string>>(loadVoted);
   const [text, setText] = useState("");
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Debounced search: wait until typing pauses, and abort the previous request
+  // so a slow response for "lun" can't overwrite the results for "lunch".
   useEffect(() => {
-    fetch("/api/submissions")
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then(setSubmissions)
-      .catch(() => setError("Could not load feedback."))
-      .finally(() => setLoading(false));
-  }, []);
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => {
+        const q = query.trim();
+        fetch(`/api/submissions${q ? `?q=${encodeURIComponent(q)}` : ""}`, {
+          signal: controller.signal,
+        })
+          .then((res) => (res.ok ? res.json() : Promise.reject()))
+          .then((data) => {
+            setSubmissions(data);
+            setLoading(false);
+          })
+          .catch(() => {
+            if (controller.signal.aborted) return;
+            setError("Could not load feedback.");
+            setLoading(false);
+          });
+      },
+      query ? 250 : 0,
+    );
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query]);
 
   function markVoted(id: string) {
     setVoted((prev) => {
@@ -75,6 +91,8 @@ export default function Home() {
       // The author's own submission already counts as their vote.
       markVoted(data.id);
       setText("");
+      // Clear any search so the new item is visible in the full list.
+      setQuery("");
     } catch (err) {
       setError(err instanceof Error && err.message ? err.message : "Could not submit.");
     } finally {
@@ -136,10 +154,26 @@ export default function Home() {
 
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
-      <ul className="mt-8 flex flex-col gap-3">
+      <label className="mt-8 block">
+        <span className="text-sm font-medium">Already suggested? Search first</span>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          maxLength={100}
+          placeholder="e.g. lunch, wifi, parking"
+          className="mt-1 w-full rounded border border-current/20 bg-transparent p-2"
+        />
+      </label>
+
+      <ul className="mt-4 flex flex-col gap-3">
         {loading && <li className="opacity-60">Loading…</li>}
         {!loading && submissions.length === 0 && (
-          <li className="opacity-60">No feedback yet. Be the first.</li>
+          <li className="opacity-60">
+            {query.trim()
+              ? "No matches. Submit it as a new idea above."
+              : "No feedback yet. Be the first."}
+          </li>
         )}
         {submissions.map((s) => {
           const hasVoted = voted.has(s.id);

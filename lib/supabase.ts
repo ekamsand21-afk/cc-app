@@ -13,10 +13,3 @@ if (!url || !key) {
 export const supabase = createClient(url, key, {
   auth: { persistSession: false },
 });
-
-export type Submission = {
-  id: string;
-  text: string;
-  votes: number;
-  created_at: string;
-};
