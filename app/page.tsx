@@ -6,23 +6,27 @@ import type { Submission } from "@/lib/types";
 import Splash from "./Splash";
 
 const VOTED_KEY = "voted-submissions";
+// Ideas this device posted. Their author's vote is the built-in first vote,
+// so it stays locked: un-voting would hit the server's floor of 1 and then
+// let the author vote a second time.
+const OWN_KEY = "own-submissions";
 const TOAST_MS = 3000;
 
 // Per-device vote memory. Not tamper-proof (clearing storage resets it), but
 // it stops casual double-voting without making students log in.
-function loadVoted(): Set<string> {
+function loadSet(key: string): Set<string> {
   try {
-    return new Set(JSON.parse(localStorage.getItem(VOTED_KEY) ?? "[]"));
+    return new Set(JSON.parse(localStorage.getItem(key) ?? "[]"));
   } catch {
     return new Set();
   }
 }
 
-function saveVoted(voted: Set<string>) {
+function saveSet(key: string, set: Set<string>) {
   try {
-    localStorage.setItem(VOTED_KEY, JSON.stringify([...voted]));
+    localStorage.setItem(key, JSON.stringify([...set]));
   } catch {
-    // Storage blocked (private mode etc.) — vote still counts server-side.
+    // Storage blocked (private mode etc.) — votes still count server-side.
   }
 }
 
@@ -32,27 +36,30 @@ function rank(list: Submission[]) {
   );
 }
 
-// Upvote chevron. Heavier stroke once the student has voted.
-function Chevron({ active }: { active: boolean }) {
+// Small upvote caret: an outline when idle, a solid caret once voted.
+function Caret({ active }: { active: boolean }) {
   return (
     <svg
       aria-hidden
       viewBox="0 0 24 24"
-      className="size-6"
-      fill="none"
+      className="size-5"
+      fill={active ? "currentColor" : "none"}
       stroke="currentColor"
-      strokeWidth={active ? 3 : 2.25}
-      strokeLinecap="round"
+      strokeWidth={2}
       strokeLinejoin="round"
     >
-      <path d="M6 15l6-6 6 6" />
+      <path d="M12 7l6.5 9h-13z" />
     </svg>
   );
 }
 
 export default function Home() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [voted, setVoted] = useState<Set<string>>(loadVoted);
+  const [voted, setVoted] = useState<Set<string>>(() => loadSet(VOTED_KEY));
+  const [own, setOwn] = useState<Set<string>>(() => loadSet(OWN_KEY));
+  // Ideas with a vote request in flight; extra taps on them are ignored so a
+  // fast double-tap can't send an up and a down that race each other.
+  const pendingRef = useRef<Set<string>>(new Set());
   const [text, setText] = useState("");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -94,8 +101,10 @@ export default function Home() {
     };
   }, [toastId]);
 
+  const toastSeq = useRef(0);
   function showToast(msg: string) {
-    setToast({ id: Date.now(), msg, leaving: false });
+    toastSeq.current += 1;
+    setToast({ id: toastSeq.current, msg, leaving: false });
   }
 
   function openComposer(e: React.MouseEvent<HTMLButtonElement>) {
@@ -138,10 +147,13 @@ export default function Home() {
     };
   }, [query]);
 
-  function markVoted(id: string) {
+  // Record (or forget) this device's vote on an idea, in state and storage.
+  function setVotedFor(id: string, on: boolean) {
     setVoted((prev) => {
-      const next = new Set(prev).add(id);
-      saveVoted(next);
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      saveSet(VOTED_KEY, next);
       return next;
     });
   }
@@ -164,8 +176,14 @@ export default function Home() {
       }
       setDuplicate(null);
       setSubmissions((prev) => rank([data, ...prev]));
-      // The author's own submission already counts as their vote.
-      markVoted(data.id);
+      // The author's own submission already counts as their vote, and that
+      // vote can't be removed (see OWN_KEY).
+      setVotedFor(data.id, true);
+      setOwn((prev) => {
+        const next = new Set(prev).add(data.id);
+        saveSet(OWN_KEY, next);
+        return next;
+      });
       setText("");
       // Clear any search so the new item is visible in the full list.
       setQuery("");
@@ -184,7 +202,7 @@ export default function Home() {
   }
 
   async function upvoteInstead(item: Submission) {
-    const votes = await handleVote(item.id);
+    const votes = await sendVote(item.id, "up");
     if (votes === null) return;
     // The match may be hidden by an active search, so make sure it's listed.
     setSubmissions((prev) =>
@@ -199,16 +217,22 @@ export default function Home() {
     showToast("Thanks — your vote was added to the existing idea.");
   }
 
-  // Returns the new vote count, or null if the vote didn't go through.
-  async function handleVote(id: string): Promise<number | null> {
-    if (voted.has(id)) return null;
-    markVoted(id);
+  // Add ("up") or remove ("down") this device's vote. The button flips
+  // immediately; the count comes from the server, which applies the change
+  // with the same compare-and-swap path either way. Returns the new count, or
+  // null if nothing was sent or the request failed (state is rolled back).
+  async function sendVote(id: string, action: "up" | "down"): Promise<number | null> {
+    if (pendingRef.current.has(id)) return null;
+    if (action === "up" && voted.has(id)) return null;
+    if (action === "down" && (!voted.has(id) || own.has(id))) return null;
+    pendingRef.current.add(id);
+    setVotedFor(id, action === "up");
     setError(null);
     try {
       const res = await fetch("/api/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id, action }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -217,16 +241,17 @@ export default function Home() {
       );
       return data.votes;
     } catch (err) {
-      // Roll back so the student can try again.
-      setVoted((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        saveVoted(next);
-        return next;
-      });
-      setError(err instanceof Error && err.message ? err.message : "Could not vote.");
+      // Roll back so the button matches what the server has.
+      setVotedFor(id, action !== "up");
+      setError(err instanceof Error && err.message ? err.message : "Could not update vote.");
       return null;
+    } finally {
+      pendingRef.current.delete(id);
     }
+  }
+
+  function toggleVote(id: string) {
+    sendVote(id, voted.has(id) ? "down" : "up");
   }
 
   const searching = query.trim() !== "";
@@ -286,7 +311,7 @@ export default function Home() {
                     </p>
                     <div className="grid grid-cols-[3.5rem_minmax(0,1fr)] items-center">
                       <div className="flex flex-col items-center justify-center py-2 text-accent-text">
-                        <Chevron active={false} />
+                        <Caret active={false} />
                         <span className="text-lg leading-none font-semibold tabular-nums">
                           {duplicate.votes}
                           <span className="sr-only"> votes</span>
@@ -370,7 +395,7 @@ export default function Home() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 maxLength={100}
-                placeholder="Search — already suggested?"
+                placeholder="Search"
                 className="h-14 w-full rounded-md border border-transparent bg-surface pr-4 pl-12 text-lg outline-none transition-colors hover:border-line focus:border-accent"
               />
             </label>
@@ -410,22 +435,33 @@ export default function Home() {
               )}
               {submissions.map((s) => {
                 const hasVoted = voted.has(s.id);
+                const isOwn = own.has(s.id);
                 const category = categoryFor(s.text);
                 return (
                   <li
                     key={s.id}
                     className="grid grid-cols-[4rem_minmax(0,1fr)] items-center py-4 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:py-5"
                   >
-                    {/* Neutral until hovered or voted; coral only marks
-                        interaction and the student's own votes. */}
+                    {/* Toggle: tap to upvote, tap again to take the vote back.
+                        Inline and transparent; coral only when this device has
+                        voted. aria-pressed tells screen readers the state. The
+                        author's own idea stays locked (see OWN_KEY). */}
                     <button
-                      onClick={() => handleVote(s.id)}
-                      disabled={hasVoted}
-                      aria-label={`${hasVoted ? "Already upvoted" : "Upvote"}, ${s.votes} ${s.votes === 1 ? "vote" : "votes"}`}
-                      className="group flex size-14 flex-col items-center justify-center justify-self-center rounded-md text-muted transition-colors hover:bg-surface hover:text-accent-text disabled:text-accent-text disabled:hover:bg-transparent"
+                      onClick={() => toggleVote(s.id)}
+                      disabled={isOwn}
+                      aria-pressed={hasVoted}
+                      aria-label={`${isOwn ? "Your idea" : "Upvote"}, ${s.votes} ${s.votes === 1 ? "vote" : "votes"}`}
+                      title={isOwn ? "Your idea — your vote is already counted" : hasVoted ? "Remove your vote" : "Upvote"}
+                      className={`flex min-h-12 min-w-12 flex-col items-center justify-center gap-1 justify-self-center rounded-md px-2 py-1 transition-colors disabled:cursor-default ${
+                        hasVoted ? "text-accent-text" : "text-muted hover:text-foreground"
+                      }`}
                     >
-                      <Chevron active={hasVoted} />
-                      <span className="-mt-0.5 text-xl leading-none font-semibold text-foreground tabular-nums group-hover:text-accent-text group-disabled:text-accent-text">
+                      <Caret active={hasVoted} />
+                      <span
+                        className={`text-base leading-none font-semibold tabular-nums ${
+                          hasVoted ? "text-accent-text" : "text-foreground"
+                        }`}
+                      >
                         {s.votes}
                       </span>
                     </button>

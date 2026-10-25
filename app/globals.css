@@ -132,12 +132,12 @@ body {
   class from app/page.tsx (and this block).
 */
 .theme-v2 {
-  --color-background: #18181b; /* charcoal ground */
-  --color-surface: #202024; /* search field, submit panel */
-  --color-sunken: #141416;
-  --color-foreground: #e4e4e7; /* off-white body text, 14:1 */
-  --color-muted: #a1a1aa; /* 6.9:1 */
-  --color-line: #2a2a2e; /* subtle row dividers (decorative) */
+  --color-background: #121214; /* rich dark charcoal */
+  --color-surface: #1c1c1f; /* search field, submit panel */
+  --color-sunken: #0e0e10;
+  --color-foreground: #e4e4e7; /* off-white/silver body text, 14.8:1 */
+  --color-muted: #a1a1aa; /* 7.3:1 */
+  --color-line: #242428; /* subtle row dividers (decorative) */
   --color-line-strong: #71717a;
   --color-accent-2: #a3b49a; /* sage secondary accent: category tags, 8.1:1 */
   --color-accent-2-soft: #24291f; /* tag fill; sage on it 6.8:1 */
