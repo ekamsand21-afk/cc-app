@@ -192,11 +192,14 @@ export default function Home() {
       <header className="border-b border-line">
         <div className="mx-auto flex w-full max-w-4xl items-end justify-between gap-6 px-3 pt-5 pb-4 sm:px-6 sm:pt-7 sm:pb-5">
           <div>
-            <h1 className="text-2xl leading-none font-extrabold tracking-tight sm:text-[28px]">
-              School Feedback
+            <h1 className="text-[28px] leading-none font-extrabold tracking-[-0.02em] sm:text-[34px]">
+              SpeakUp
             </h1>
-            <p className="mt-1.5 text-sm text-muted">
-              Anonymous. Upvote what you agree with, or add your own.
+            <p className="mt-2.5 text-[15px] leading-snug font-semibold sm:mt-3 sm:text-base">
+              Anonymous feedback for our school — what should change?
+            </p>
+            <p className="mt-0.5 text-sm leading-snug text-muted">
+              Upvote the ideas you agree with, or add your own.
             </p>
           </div>
           <button
@@ -332,40 +335,61 @@ export default function Home() {
           </label>
         </div>
 
-        <ul className="divide-y divide-line overflow-hidden rounded border border-line">
-          {loading && <li className="bg-surface px-4 py-4 text-muted">Loading…</li>}
-          {!loading && submissions.length === 0 && (
-            <li className="bg-surface px-4 py-4 text-muted">
-              {searching
-                ? "No matches. Add it as new feedback."
-                : "No feedback yet. Be the first."}
-            </li>
+        <div>
+          {/* Column labels share the rows' grid so they line up at every width.
+              Hidden from screen readers: each vote button already says its count. */}
+          {submissions.length > 0 && (
+            <div
+              aria-hidden
+              className="grid grid-cols-[4rem_minmax(0,1fr)] px-px pb-1.5 text-[11px] font-bold tracking-[0.1em] text-muted uppercase sm:grid-cols-[4.5rem_minmax(0,1fr)]"
+            >
+              <span className="text-center">Votes</span>
+              <span className="px-3 sm:px-4">Ideas</span>
+            </div>
           )}
-          {submissions.map((s) => {
-            const hasVoted = voted.has(s.id);
-            return (
-              <li
-                key={s.id}
-                className="grid grid-cols-[4rem_minmax(0,1fr)] bg-surface sm:grid-cols-[4.5rem_minmax(0,1fr)]"
-              >
-                <button
-                  onClick={() => handleVote(s.id)}
-                  disabled={hasVoted}
-                  aria-label={`${hasVoted ? "Already upvoted" : "Upvote"}, ${s.votes} ${s.votes === 1 ? "vote" : "votes"}`}
-                  className="flex min-h-16 flex-col items-center justify-center border-r border-line bg-sunken text-accent-text hover:bg-accent-soft disabled:bg-accent disabled:text-on-accent"
-                >
-                  <span aria-hidden className="text-[10px] leading-none">▲</span>
-                  <span className="text-xl leading-tight font-extrabold tabular-nums">
-                    {s.votes}
-                  </span>
-                </button>
-                <p className="self-center px-3 py-3 text-[15px] leading-snug break-words whitespace-pre-wrap sm:px-4 sm:text-base">
-                  {s.text}
-                </p>
+          <ul className="divide-y divide-line overflow-hidden rounded border border-line">
+            {loading && <li className="bg-surface px-4 py-4 text-muted">Loading…</li>}
+            {!loading && submissions.length === 0 && (
+              <li className="bg-surface px-4 py-4 text-muted">
+                {searching
+                  ? "No matches. Add it as new feedback."
+                  : "No feedback yet. Be the first."}
               </li>
-            );
-          })}
-        </ul>
+            )}
+            {submissions.map((s) => {
+              const hasVoted = voted.has(s.id);
+              return (
+                <li
+                  key={s.id}
+                  className="grid grid-cols-[4rem_minmax(0,1fr)] bg-surface sm:grid-cols-[4.5rem_minmax(0,1fr)]"
+                >
+                  <button
+                    onClick={() => handleVote(s.id)}
+                    disabled={hasVoted}
+                    aria-label={`${hasVoted ? "Already upvoted" : "Upvote"}, ${s.votes} ${s.votes === 1 ? "vote" : "votes"}`}
+                    className="flex min-h-16 flex-col items-center justify-center border-r border-line bg-sunken text-accent-text hover:bg-accent-soft disabled:bg-accent disabled:text-on-accent"
+                  >
+                    <span aria-hidden className="text-[10px] leading-none">▲</span>
+                    <span className="text-xl leading-tight font-extrabold tabular-nums">
+                      {s.votes}
+                    </span>
+                  </button>
+                  {/* Display-only cap: at most two lines, then an ellipsis. The
+                      full text stays in the DOM (screen readers read all of it)
+                      and in the title tooltip on hover. Vertical spacing is
+                      margin, not padding: line-clamp clips at the padding
+                      edge, so padding would let a third line peek through. */}
+                  <p
+                    title={s.text}
+                    className="my-3 line-clamp-2 self-center px-3 text-[15px] leading-snug break-words whitespace-pre-wrap sm:px-4 sm:text-base"
+                  >
+                    {s.text}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </main>
 
       {!composerOpen && (
