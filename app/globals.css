@@ -1,38 +1,45 @@
 @import "tailwindcss";
 
 /*
-  Civic palette — the single source of truth for color.
+  Civic palette (dark) — the single source of truth for color.
   Each token becomes a Tailwind utility: --color-accent -> bg-accent,
-  text-accent, border-accent, ring-accent, etc. Change a value here and
-  every page follows.
+  border-accent, ring-accent; --color-accent-text -> text-accent-text.
+  Change a value here and every page follows.
 
-  Contrast (WCAG): accent on white 5.1:1, white on accent 5.1:1,
-  foreground 17.4:1, muted 6.1:1 on background, line-strong 3.2:1
-  (input boundaries need 3:1). The red is for primary actions, vote
-  counts and selected states only — never large fills.
+  The red comes in two flat tunings around #E03E58, because on dark one
+  red can't do both jobs at AA:
+  - accent (#D63851): fills, borders, rings. White text on it 4.6:1.
+  - accent-text (#EC5A72): red TEXT (vote counts, totals). 5.2:1 on cards.
+  #E03E58 itself would give 4.2:1 for white text and 4.1:1 as text on cards.
+
+  Contrast (WCAG): foreground 14.9:1 on surface, muted 6.8:1,
+  line-strong 3.3:1 (input boundaries need 3:1). Surface vs background is
+  only 1.1:1, so cards rely on their border. The red is for primary
+  actions, vote counts and selected states only — never large fills.
 */
 @theme {
-  --color-background: #fafafa; /* page ground */
-  --color-surface: #ffffff; /* cards, inputs, panels */
-  --color-foreground: #1a1a1a; /* body text */
-  --color-muted: #5c5f66; /* secondary text */
-  --color-line: #e4e4e7; /* card borders, dividers (decorative) */
-  --color-line-strong: #8c9099; /* input and button borders */
+  --color-background: #0f0f0f; /* page ground */
+  --color-surface: #1a1a1a; /* cards, inputs, panels */
+  --color-foreground: #ededed; /* body text */
+  --color-muted: #a1a1aa; /* secondary text */
+  --color-line: #2e2e2e; /* card borders, dividers (decorative) */
+  --color-line-strong: #6b6b70; /* input and button borders */
 
-  --color-accent: #c8364b; /* muted crimson */
-  --color-accent-hover: #a82b3e;
-  --color-accent-soft: #fdf2f4; /* small selected-state fills only */
+  --color-accent: #d63851; /* crimson for fills, borders, rings */
+  --color-accent-hover: #bf2f47;
+  --color-accent-text: #ec5a72; /* crimson for text on dark */
+  --color-accent-soft: #2a1418; /* small selected-state fills only */
   --color-on-accent: #ffffff;
 
-  --color-danger: #b42318; /* error text */
-  --color-success: #1e7a46; /* confirmation text */
+  --color-danger: #f87171; /* error text */
+  --color-success: #4ade80; /* confirmation text */
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {

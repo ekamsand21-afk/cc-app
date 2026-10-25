@@ -85,7 +85,7 @@ export default function StaffDashboard() {
           <div className="text-sm text-muted">Submissions in view</div>
         </div>
         <div className="rounded border border-line bg-surface p-3">
-          <div className="text-2xl font-bold text-accent">{totalVotes}</div>
+          <div className="text-2xl font-bold text-accent-text">{totalVotes}</div>
           <div className="text-sm text-muted">Student votes in view</div>
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function StaffDashboard() {
               <p className="mt-1 text-xs text-muted">{formatDate(s.created_at)}</p>
             </div>
             <span className="shrink-0 text-right">
-              <span className="block text-lg font-bold text-accent">{s.votes}</span>
+              <span className="block text-lg font-bold text-accent-text">{s.votes}</span>
               <span className="block text-xs text-muted">
                 {s.votes === 1 ? "vote" : "votes"}
               </span>

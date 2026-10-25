@@ -267,7 +267,7 @@ export default function Home() {
                 onClick={() => handleVote(s.id)}
                 disabled={hasVoted}
                 aria-label={hasVoted ? "Already upvoted" : "Upvote"}
-                className="flex min-w-12 flex-col items-center rounded border border-line-strong bg-surface px-2 py-1 text-accent hover:bg-accent-soft disabled:border-accent disabled:bg-accent-soft"
+                className="flex min-w-12 flex-col items-center rounded border border-line-strong bg-surface px-2 py-1 text-accent-text hover:bg-accent-soft disabled:border-accent disabled:bg-accent-soft"
               >
                 <span aria-hidden>▲</span>
                 <span className="font-semibold">{s.votes}</span>
