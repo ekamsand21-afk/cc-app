@@ -37,9 +37,11 @@
 
   /* design-v2 (experimental): defined here so Tailwind generates utilities;
      only the student page's .theme-v2 wrapper uses them. */
-  --color-accent-2: #a3b49a;
-  --color-accent-2-soft: #24291f;
   --color-toast: #27272a;
+  --color-vote-tint: #3b1722;
+  --color-tag: #27272a;
+  --color-tag-text: #a1a1aa;
+  --color-label: #7f7f87;
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -139,9 +141,11 @@ body {
   --color-muted: #a1a1aa; /* 7.3:1 */
   --color-line: #242428; /* subtle row dividers (decorative) */
   --color-line-strong: #71717a;
-  --color-accent-2: #a3b49a; /* sage secondary accent: category tags, 8.1:1 */
-  --color-accent-2-soft: #24291f; /* tag fill; sage on it 6.8:1 */
   --color-toast: #27272a;
+  --color-vote-tint: #3b1722; /* voted control fill; coral on it 4.7:1 */
+  --color-tag: #27272a; /* neutral category badge */
+  --color-tag-text: #a1a1aa; /* 5.8:1 on the badge */
+  --color-label: #7f7f87; /* column labels; #71717a is 3.9:1, under AA */
 }
 
 /* Transient confirmation toast (app/page.tsx): slides up, fades out. */

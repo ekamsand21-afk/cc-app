@@ -76,6 +76,22 @@ export default function Home() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // The "Add feedback" button that opened the box, so focus can return to it.
   const openerRef = useRef<HTMLButtonElement | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // "/" focuses search (the hint inside the field shows this on devices with a
+  // keyboard). Ignored while typing anywhere and with modifier keys, so a "/"
+  // in a post never jumps away.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   useEffect(() => {
     if (!composerOpen) return;
@@ -373,13 +389,16 @@ export default function Home() {
             </p>
           )}
 
-          <div className="flex gap-2.5">
+          {/* Search and the add button sit side by side but stay visually
+              separate: a light, translucent outlined field vs. a solid button,
+              both 44px tall so their edges line up. */}
+          <div className="flex items-center gap-3">
             <label className="relative flex flex-1 items-center">
               <span className="sr-only">Search feedback</span>
               <svg
                 aria-hidden
                 viewBox="0 0 24 24"
-                className="pointer-events-none absolute left-4 size-5 text-muted"
+                className="pointer-events-none absolute left-3.5 size-[18px] text-muted"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={2}
@@ -388,22 +407,35 @@ export default function Home() {
                 <circle cx="11" cy="11" r="7" />
                 <path d="M20 20l-3.5-3.5" />
               </svg>
-              {/* Focus state is the accent border (3.5:1 against the field),
-                  replacing the default outline. */}
+              {/* Focus state is the accent border, replacing the default
+                  outline. The "/" hint is a sibling after the input so it can
+                  hide while the field is focused or filled. */}
               <input
+                ref={searchRef}
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 maxLength={100}
                 placeholder="Search"
-                className="h-14 w-full rounded-md border border-transparent bg-surface pr-4 pl-12 text-lg outline-none transition-colors hover:border-line focus:border-accent"
+                aria-keyshortcuts="/"
+                className="peer h-11 w-full rounded-lg border border-white/15 bg-white/[0.04] pr-12 pl-10 text-base outline-none transition-colors hover:border-white/25 focus:border-accent"
               />
+              {/* Only on devices with a precise pointer (i.e. a keyboard is
+                  likely) and not on phones, where shortcuts don't apply. */}
+              <kbd
+                aria-hidden
+                className={`pointer-events-none absolute right-2.5 hidden h-6 min-w-6 items-center justify-center rounded border border-white/10 bg-tag px-1.5 font-sans text-xs font-medium text-tag-text sm:pointer-fine:flex peer-focus:!hidden ${
+                  query ? "!hidden" : ""
+                }`}
+              >
+                /
+              </kbd>
             </label>
             <button
               onClick={openComposer}
               aria-expanded={composerOpen}
               aria-controls="composer"
-              className="hidden h-14 shrink-0 items-center rounded-md bg-accent px-6 text-lg font-semibold text-on-accent hover:bg-accent-hover sm:inline-flex"
+              className="hidden h-11 shrink-0 items-center rounded-lg bg-accent px-4 py-2.5 text-base font-semibold text-on-accent hover:bg-accent-hover sm:inline-flex"
             >
               + Add feedback
             </button>
@@ -418,7 +450,7 @@ export default function Home() {
             {submissions.length > 0 && (
               <div
                 aria-hidden
-                className="grid grid-cols-[4rem_minmax(0,1fr)] border-b border-line pb-2.5 font-display text-[13px] leading-none tracking-[-0.01em] text-muted uppercase sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:text-sm"
+                className="grid grid-cols-[4rem_minmax(0,1fr)] border-b border-line pb-2.5 font-sans text-xs leading-none font-semibold tracking-[0.08em] text-label uppercase sm:grid-cols-[4.5rem_minmax(0,1fr)]"
               >
                 <span className="text-center">Votes</span>
                 <span className="pl-3 sm:pl-4">Ideas</span>
@@ -453,7 +485,7 @@ export default function Home() {
                       aria-label={`${isOwn ? "Your idea" : "Upvote"}, ${s.votes} ${s.votes === 1 ? "vote" : "votes"}`}
                       title={isOwn ? "Your idea — your vote is already counted" : hasVoted ? "Remove your vote" : "Upvote"}
                       className={`flex min-h-12 min-w-12 flex-col items-center justify-center gap-1 justify-self-center rounded-md px-2 py-1 transition-colors disabled:cursor-default ${
-                        hasVoted ? "text-accent-text" : "text-muted hover:text-foreground"
+                        hasVoted ? "bg-vote-tint text-accent-text" : "text-muted hover:text-foreground"
                       }`}
                     >
                       <Caret active={hasVoted} />
@@ -479,7 +511,7 @@ export default function Home() {
                         {s.text}
                       </p>
                       {category && (
-                        <span className="mt-2 inline-block rounded bg-accent-2-soft px-2 py-0.5 text-xs font-medium tracking-wide text-accent-2">
+                        <span className="mt-2 inline-block rounded bg-tag px-1.5 py-0.5 text-[11px] leading-tight font-semibold tracking-[0.06em] text-tag-text uppercase">
                           {category}
                         </span>
                       )}
