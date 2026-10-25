@@ -35,6 +35,12 @@
   --color-danger: #f87171; /* error text */
   --color-success: #4ade80; /* confirmation text */
 
+  /* design-v2 (experimental): defined here so Tailwind generates utilities;
+     only the student page's .theme-v2 wrapper uses them. */
+  --color-accent-2: #a3b49a;
+  --color-accent-2-soft: #24291f;
+  --color-toast: #27272a;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-bungee), Impact, sans-serif; /* student page wordmark + column labels only */
@@ -50,9 +56,13 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+/* In the base layer so a component can replace it with its own focus style
+   (e.g. the student search field's accent border uses outline-none). */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
 }
 
 ::placeholder {
@@ -111,5 +121,55 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .splash {
     display: none;
+  }
+}
+
+/*
+  ── design-v2 (experimental, student page only) ──────────────────────────
+  Scoped palette: overrides the color tokens ONLY inside .theme-v2, so every
+  token utility (bg-background, text-muted, …) on the student page picks up
+  the softer values while /staff keeps the originals. Revert = remove the
+  class from app/page.tsx (and this block).
+*/
+.theme-v2 {
+  --color-background: #18181b; /* charcoal ground */
+  --color-surface: #202024; /* search field, submit panel */
+  --color-sunken: #141416;
+  --color-foreground: #e4e4e7; /* off-white body text, 14:1 */
+  --color-muted: #a1a1aa; /* 6.9:1 */
+  --color-line: #2a2a2e; /* subtle row dividers (decorative) */
+  --color-line-strong: #71717a;
+  --color-accent-2: #a3b49a; /* sage secondary accent: category tags, 8.1:1 */
+  --color-accent-2-soft: #24291f; /* tag fill; sage on it 6.8:1 */
+  --color-toast: #27272a;
+}
+
+/* Transient confirmation toast (app/page.tsx): slides up, fades out. */
+.toast {
+  animation: toast-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.toast[data-leaving="true"] {
+  animation: toast-out 220ms ease-in both;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast[data-leaving="true"] {
+    animation-duration: 1ms;
   }
 }

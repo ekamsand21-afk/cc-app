@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { categoryFor } from "@/lib/categories";
 import type { Submission } from "@/lib/types";
 import Splash from "./Splash";
 
 const VOTED_KEY = "voted-submissions";
+const TOAST_MS = 3000;
 
 // Per-device vote memory. Not tamper-proof (clearing storage resets it), but
 // it stops casual double-voting without making students log in.
@@ -30,6 +32,24 @@ function rank(list: Submission[]) {
   );
 }
 
+// Upvote chevron. Heavier stroke once the student has voted.
+function Chevron({ active }: { active: boolean }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      className="size-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={active ? 3 : 2.25}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 15l6-6 6 6" />
+    </svg>
+  );
+}
+
 export default function Home() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [voted, setVoted] = useState<Set<string>>(loadVoted);
@@ -38,7 +58,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  // Transient confirmation; `id` restarts the timer when a new one replaces it.
+  const [toast, setToast] = useState<{ id: number; msg: string; leaving: boolean } | null>(
+    null,
+  );
   // Set when the server thinks the draft repeats an existing idea.
   const [duplicate, setDuplicate] = useState<Submission | null>(null);
   // Browsing is the default; the submit box opens on demand.
@@ -53,9 +76,30 @@ export default function Home() {
     textareaRef.current?.scrollIntoView({ block: "center" });
   }, [composerOpen]);
 
+  // Auto-dismiss: start the exit animation, then remove the toast.
+  const toastId = toast?.id;
+  useEffect(() => {
+    if (toastId === undefined) return;
+    const leave = setTimeout(
+      () => setToast((t) => (t?.id === toastId ? { ...t, leaving: true } : t)),
+      TOAST_MS,
+    );
+    const remove = setTimeout(
+      () => setToast((t) => (t?.id === toastId ? null : t)),
+      TOAST_MS + 240,
+    );
+    return () => {
+      clearTimeout(leave);
+      clearTimeout(remove);
+    };
+  }, [toastId]);
+
+  function showToast(msg: string) {
+    setToast({ id: Date.now(), msg, leaving: false });
+  }
+
   function openComposer(e: React.MouseEvent<HTMLButtonElement>) {
     openerRef.current = e.currentTarget;
-    setNotice(null);
     setComposerOpen(true);
   }
 
@@ -105,7 +149,6 @@ export default function Home() {
   // force = the student saw the suggested match and wants to post anyway.
   async function submit(force: boolean) {
     setError(null);
-    setNotice(null);
     setSubmitting(true);
     try {
       const res = await fetch("/api/submit", {
@@ -127,7 +170,7 @@ export default function Home() {
       // Clear any search so the new item is visible in the full list.
       setQuery("");
       closeComposer();
-      setNotice("Thanks — your feedback was posted.");
+      showToast("Thanks — your feedback was posted.");
     } catch (err) {
       setError(err instanceof Error && err.message ? err.message : "Could not submit.");
     } finally {
@@ -153,7 +196,7 @@ export default function Home() {
     );
     setText("");
     closeComposer();
-    setNotice("Thanks — your vote was added to the existing idea.");
+    showToast("Thanks — your vote was added to the existing idea.");
   }
 
   // Returns the new vote count, or null if the vote didn't go through.
@@ -190,214 +233,262 @@ export default function Home() {
 
   return (
     <>
+      {/* Outside .theme-v2 on purpose: the splash keeps the #0F0F0F ground its
+          logo was blended into. */}
       <Splash />
-      <header className="border-b border-line px-3 pt-6 pb-5 text-center sm:px-6 sm:pt-9 sm:pb-7">
-        <h1 className="font-display text-[44px] leading-none tracking-[0.01em] sm:text-7xl">
-          SHOUT<span className="text-accent-text">OUT</span>
-        </h1>
-        <p className="mt-3 text-lg leading-snug font-bold text-balance sm:mt-3.5 sm:text-[22px]">
-          Feedback — what should change around here?
-        </p>
-      </header>
 
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-3.5 px-3 pt-3.5 pb-32 sm:gap-4 sm:px-6 sm:pt-6 sm:pb-12">
-        {composerOpen && (
-          <section
-            id="composer"
-            aria-label="Add feedback"
-            onKeyDown={(e) => e.key === "Escape" && closeComposer()}
-            className="rounded border border-line-strong bg-surface"
-          >
-            <div className="flex items-center justify-between border-b border-line px-3 py-2.5">
-              <h2 className="text-lg font-extrabold">Add feedback</h2>
-              <span className="text-sm text-muted">Anonymous</span>
-            </div>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-3">
-              <label className="flex flex-col gap-1.5">
-                <span className="text-base text-muted">What should our school change?</span>
-                <textarea
-                  ref={textareaRef}
-                  value={text}
-                  onChange={(e) => {
-                    setText(e.target.value);
-                    // Editing the draft makes any earlier match stale.
-                    setDuplicate(null);
-                    setNotice(null);
-                  }}
-                  maxLength={500}
-                  rows={3}
-                  className="w-full rounded border border-line-strong bg-background p-3 text-lg"
-                />
-              </label>
+      {/* design-v2: .theme-v2 swaps in the softer palette for this page only
+          (see globals.css). font-sans is Geist, which has a real medium
+          weight; Arial doesn't. */}
+      <div className="theme-v2 flex flex-1 flex-col bg-background font-sans text-foreground">
+        <header className="border-b border-line px-4 pt-7 pb-6 text-center sm:px-6 sm:pt-10 sm:pb-8">
+          <h1 className="font-display text-[44px] leading-none tracking-[-0.03em] sm:text-7xl">
+            SHOUT<span className="text-accent-text">OUT</span>
+          </h1>
+          <p className="mt-3 text-lg leading-snug font-semibold text-balance sm:mt-4 sm:text-[22px]">
+            Feedback — what should change around here?
+          </p>
+        </header>
 
-              {duplicate && (
-                <div role="alert" className="rounded border border-accent bg-background">
-                  <p className="border-b border-line px-3 py-2.5 text-base font-extrabold">
-                    This looks like an existing idea
-                  </p>
-                  <div className="grid grid-cols-[3.25rem_minmax(0,1fr)]">
-                    <div className="flex flex-col items-center justify-center border-r border-line bg-sunken text-accent-text">
-                      <span aria-hidden className="text-[10px]">▲</span>
-                      <span className="text-lg font-extrabold tabular-nums">
-                        {duplicate.votes}
-                        <span className="sr-only"> votes</span>
-                      </span>
-                    </div>
-                    <p className="px-3 py-2.5 text-base leading-snug break-words whitespace-pre-wrap">
-                      {duplicate.text}
+        <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-5 px-4 pt-5 pb-32 sm:gap-6 sm:px-6 sm:pt-8 sm:pb-14">
+          {composerOpen && (
+            <section
+              id="composer"
+              aria-label="Add feedback"
+              onKeyDown={(e) => e.key === "Escape" && closeComposer()}
+              className="rounded-md border border-line bg-surface"
+            >
+              <div className="flex items-center justify-between border-b border-line px-4 py-3">
+                <h2 className="text-lg font-semibold">Add feedback</h2>
+                <span className="text-sm text-muted">Anonymous</span>
+              </div>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-4">
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-base text-muted">What should our school change?</span>
+                  <textarea
+                    ref={textareaRef}
+                    value={text}
+                    onChange={(e) => {
+                      setText(e.target.value);
+                      // Editing the draft makes any earlier match stale.
+                      setDuplicate(null);
+                    }}
+                    maxLength={500}
+                    rows={3}
+                    className="w-full rounded-md border border-line-strong bg-background p-3 text-lg outline-none focus:border-accent"
+                  />
+                </label>
+
+                {duplicate && (
+                  <div role="alert" className="rounded-md border border-accent bg-background">
+                    <p className="border-b border-line px-3 py-2.5 text-base font-semibold">
+                      This looks like an existing idea
                     </p>
-                  </div>
-                  <div className="grid grid-cols-2 border-t border-line">
-                    {voted.has(duplicate.id) ? (
-                      <span className="flex min-h-14 items-center justify-center border-r border-line px-2 text-center text-base text-muted">
-                        You already upvoted this one.
-                      </span>
-                    ) : (
+                    <div className="grid grid-cols-[3.5rem_minmax(0,1fr)] items-center">
+                      <div className="flex flex-col items-center justify-center py-2 text-accent-text">
+                        <Chevron active={false} />
+                        <span className="text-lg leading-none font-semibold tabular-nums">
+                          {duplicate.votes}
+                          <span className="sr-only"> votes</span>
+                        </span>
+                      </div>
+                      <p className="py-2.5 pr-3 text-base leading-snug font-medium break-words whitespace-pre-wrap">
+                        {duplicate.text}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 border-t border-line">
+                      {voted.has(duplicate.id) ? (
+                        <span className="flex min-h-14 items-center justify-center border-r border-line px-2 text-center text-base text-muted">
+                          You already upvoted this one.
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => upvoteInstead(duplicate)}
+                          className="min-h-14 border-r border-line bg-accent px-2 text-base font-semibold text-on-accent hover:bg-accent-hover"
+                        >
+                          Upvote it instead
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => upvoteInstead(duplicate)}
-                        className="min-h-14 border-r border-line bg-accent px-2 text-base font-extrabold text-on-accent hover:bg-accent-hover"
+                        onClick={() => submit(true)}
+                        disabled={submitting}
+                        className="min-h-14 px-2 text-base hover:bg-surface disabled:opacity-40"
                       >
-                        Upvote it instead
+                        {submitting ? "Submitting…" : "Submit mine anyway"}
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => submit(true)}
-                      disabled={submitting}
-                      className="min-h-14 bg-surface px-2 text-base hover:bg-sunken disabled:opacity-40"
-                    >
-                      {submitting ? "Submitting…" : "Submit mine anyway"}
-                    </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
-                <button
-                  type="button"
-                  onClick={closeComposer}
-                  className="h-14 rounded border border-line-strong bg-surface px-6 text-lg hover:bg-sunken"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting || !text.trim()}
-                  className="h-14 rounded bg-accent px-6 text-lg font-extrabold text-on-accent hover:bg-accent-hover disabled:opacity-40 disabled:hover:bg-accent"
-                >
-                  {submitting ? "Submitting…" : "Submit"}
-                </button>
-              </div>
-            </form>
-          </section>
-        )}
-
-        {notice && (
-          <p role="status" className="rounded border border-line bg-surface px-3.5 py-2.5 text-base text-success">
-            {notice}
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="rounded border border-line bg-surface px-3.5 py-2.5 text-base text-danger">
-            {error}
-          </p>
-        )}
-
-        <div className="flex gap-2.5">
-          <label className="flex flex-1">
-            <span className="sr-only">Search feedback</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              maxLength={100}
-              placeholder="Search — already suggested?"
-              className="h-14 w-full rounded border border-line-strong bg-surface px-4 text-lg"
-            />
-          </label>
-          <button
-            onClick={openComposer}
-            aria-expanded={composerOpen}
-            aria-controls="composer"
-            className="hidden h-14 shrink-0 items-center rounded bg-accent px-6 text-lg font-extrabold text-on-accent hover:bg-accent-hover sm:inline-flex"
-          >
-            + Add feedback
-          </button>
-        </div>
-
-        <div>
-          {/* The visible column labels are decorative, so give the list a real
-              heading for screen-reader navigation. */}
-          <h2 className="sr-only">Ideas</h2>
-          {/* Column labels share the rows' grid so they line up at every width.
-              Hidden from screen readers: each vote button already says its count. */}
-          {submissions.length > 0 && (
-            <div
-              aria-hidden
-              className="grid grid-cols-[5.5rem_minmax(0,1fr)] px-px pb-2 font-display text-[19px] leading-none uppercase sm:grid-cols-[6.5rem_minmax(0,1fr)] sm:text-2xl"
-            >
-              <span className="text-center text-accent-text">Votes</span>
-              <span className="px-3.5 sm:px-[18px]">Ideas</span>
-            </div>
-          )}
-          <ul className="divide-y divide-line overflow-hidden rounded border border-line">
-            {loading && <li className="bg-surface px-4 py-4 text-muted">Loading…</li>}
-            {!loading && submissions.length === 0 && (
-              <li className="bg-surface px-4 py-4 text-muted">
-                {searching
-                  ? "No matches. Add it as new feedback."
-                  : "No feedback yet. Be the first."}
-              </li>
-            )}
-            {submissions.map((s) => {
-              const hasVoted = voted.has(s.id);
-              return (
-                <li
-                  key={s.id}
-                  className="grid grid-cols-[5.5rem_minmax(0,1fr)] bg-surface sm:grid-cols-[6.5rem_minmax(0,1fr)]"
-                >
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
                   <button
-                    onClick={() => handleVote(s.id)}
-                    disabled={hasVoted}
-                    aria-label={`${hasVoted ? "Already upvoted" : "Upvote"}, ${s.votes} ${s.votes === 1 ? "vote" : "votes"}`}
-                    className="flex min-h-[76px] flex-col items-center justify-center border-r border-line bg-sunken text-accent-text hover:bg-accent-soft disabled:bg-accent disabled:text-on-accent"
+                    type="button"
+                    onClick={closeComposer}
+                    className="h-14 rounded-md border border-line-strong px-6 text-lg hover:bg-background"
                   >
-                    <span aria-hidden className="text-xs leading-none">▲</span>
-                    <span className="text-[26px] leading-tight font-extrabold tabular-nums sm:text-[28px]">
-                      {s.votes}
-                    </span>
+                    Cancel
                   </button>
-                  {/* Display-only cap: at most two lines, then an ellipsis. The
-                      full text stays in the DOM (screen readers read all of it)
-                      and in the title tooltip on hover. Vertical spacing is
-                      margin, not padding: line-clamp clips at the padding
-                      edge, so padding would let a third line peek through. */}
-                  <p
-                    title={s.text}
-                    className="my-3.5 line-clamp-2 self-center px-3.5 text-lg leading-[1.35] break-words whitespace-pre-wrap sm:px-[18px] sm:text-xl"
+                  <button
+                    type="submit"
+                    disabled={submitting || !text.trim()}
+                    className="h-14 rounded-md bg-accent px-6 text-lg font-semibold text-on-accent hover:bg-accent-hover disabled:opacity-40 disabled:hover:bg-accent"
                   >
-                    {s.text}
-                  </p>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </main>
+                    {submitting ? "Submitting…" : "Submit"}
+                  </button>
+                </div>
+              </form>
+            </section>
+          )}
 
-      {!composerOpen && (
-        <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-background px-3 pt-2.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] sm:hidden">
-          <button
-            onClick={openComposer}
-            aria-expanded={composerOpen}
-            aria-controls="composer"
-            className="h-15 w-full rounded bg-accent text-xl font-extrabold text-on-accent hover:bg-accent-hover"
-          >
-            + Add feedback
-          </button>
+          {error && (
+            <p role="alert" className="rounded-md border border-line px-4 py-3 text-base text-danger">
+              {error}
+            </p>
+          )}
+
+          <div className="flex gap-2.5">
+            <label className="relative flex flex-1 items-center">
+              <span className="sr-only">Search feedback</span>
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                className="pointer-events-none absolute left-4 size-5 text-muted"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-3.5-3.5" />
+              </svg>
+              {/* Focus state is the accent border (3.5:1 against the field),
+                  replacing the default outline. */}
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                maxLength={100}
+                placeholder="Search — already suggested?"
+                className="h-14 w-full rounded-md border border-transparent bg-surface pr-4 pl-12 text-lg outline-none transition-colors hover:border-line focus:border-accent"
+              />
+            </label>
+            <button
+              onClick={openComposer}
+              aria-expanded={composerOpen}
+              aria-controls="composer"
+              className="hidden h-14 shrink-0 items-center rounded-md bg-accent px-6 text-lg font-semibold text-on-accent hover:bg-accent-hover sm:inline-flex"
+            >
+              + Add feedback
+            </button>
+          </div>
+
+          <div>
+            {/* The visible column labels are decorative, so give the list a real
+                heading for screen-reader navigation. */}
+            <h2 className="sr-only">Ideas</h2>
+            {/* Column labels share the rows' grid so they line up at every width.
+                Hidden from screen readers: each vote button already says its count. */}
+            {submissions.length > 0 && (
+              <div
+                aria-hidden
+                className="grid grid-cols-[4rem_minmax(0,1fr)] border-b border-line pb-2.5 font-display text-[13px] leading-none tracking-[-0.01em] text-muted uppercase sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:text-sm"
+              >
+                <span className="text-center">Votes</span>
+                <span className="pl-3 sm:pl-4">Ideas</span>
+              </div>
+            )}
+            <ul className="divide-y divide-line">
+              {loading && <li className="py-6 text-muted">Loading…</li>}
+              {!loading && submissions.length === 0 && (
+                <li className="py-6 text-muted">
+                  {searching
+                    ? "No matches. Add it as new feedback."
+                    : "No feedback yet. Be the first."}
+                </li>
+              )}
+              {submissions.map((s) => {
+                const hasVoted = voted.has(s.id);
+                const category = categoryFor(s.text);
+                return (
+                  <li
+                    key={s.id}
+                    className="grid grid-cols-[4rem_minmax(0,1fr)] items-center py-4 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:py-5"
+                  >
+                    {/* Neutral until hovered or voted; coral only marks
+                        interaction and the student's own votes. */}
+                    <button
+                      onClick={() => handleVote(s.id)}
+                      disabled={hasVoted}
+                      aria-label={`${hasVoted ? "Already upvoted" : "Upvote"}, ${s.votes} ${s.votes === 1 ? "vote" : "votes"}`}
+                      className="group flex size-14 flex-col items-center justify-center justify-self-center rounded-md text-muted transition-colors hover:bg-surface hover:text-accent-text disabled:text-accent-text disabled:hover:bg-transparent"
+                    >
+                      <Chevron active={hasVoted} />
+                      <span className="-mt-0.5 text-xl leading-none font-semibold text-foreground tabular-nums group-hover:text-accent-text group-disabled:text-accent-text">
+                        {s.votes}
+                      </span>
+                    </button>
+                    <div className="min-w-0 pl-3 sm:pl-4">
+                      {/* Display-only cap: at most two lines, then an ellipsis.
+                          The full text stays in the DOM (screen readers read
+                          all of it) and in the title tooltip on hover. Keep
+                          vertical padding off this element: line-clamp clips
+                          at the padding edge, so a third line would peek
+                          through. */}
+                      <p
+                        title={s.text}
+                        className="line-clamp-2 text-[17px] leading-snug font-medium break-words whitespace-pre-wrap sm:text-lg"
+                      >
+                        {s.text}
+                      </p>
+                      {category && (
+                        <span className="mt-2 inline-block rounded bg-accent-2-soft px-2 py-0.5 text-xs font-medium tracking-wide text-accent-2">
+                          {category}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </main>
+
+        {!composerOpen && (
+          <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-background px-4 pt-2.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] sm:hidden">
+            <button
+              onClick={openComposer}
+              aria-expanded={composerOpen}
+              aria-controls="composer"
+              className="h-15 w-full rounded-md bg-accent text-xl font-semibold text-on-accent hover:bg-accent-hover"
+            >
+              + Add feedback
+            </button>
+          </div>
+        )}
+
+        {/* Toast region is always mounted so screen readers announce new
+            messages. Sits above the mobile add bar. */}
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed inset-x-0 bottom-[calc(6.5rem+env(safe-area-inset-bottom))] z-20 flex justify-center px-4 sm:bottom-8"
+        >
+          {toast && (
+            <p
+              key={toast.id}
+              data-leaving={toast.leaving}
+              className="toast rounded-md border border-line bg-toast px-4 py-3 text-base font-medium text-foreground"
+            >
+              <span className="mr-2 text-success" aria-hidden>
+                ✓
+              </span>
+              {toast.msg}
+            </p>
+          )}
         </div>
-      )}
+      </div>
     </>
   );
 }
