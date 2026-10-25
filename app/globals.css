@@ -20,6 +20,7 @@
 @theme {
   --color-background: #0f0f0f; /* page ground */
   --color-surface: #1a1a1a; /* cards, inputs, panels */
+  --color-sunken: #141414; /* recessed blocks inside rows (vote column) */
   --color-foreground: #ededed; /* body text */
   --color-muted: #a1a1aa; /* secondary text */
   --color-line: #2e2e2e; /* card borders, dividers (decorative) */
