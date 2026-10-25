@@ -163,7 +163,7 @@ export default function Home() {
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
       <h1 className="text-2xl font-bold">School Feedback</h1>
-      <p className="mt-1 text-sm opacity-70">
+      <p className="mt-1 text-sm text-muted">
         Anonymous. Share what should change, and upvote what you agree with.
       </p>
 
@@ -179,12 +179,12 @@ export default function Home() {
           maxLength={500}
           rows={3}
           placeholder="What should our school change?"
-          className="w-full rounded border border-current/20 bg-transparent p-3"
+          className="w-full rounded border border-line-strong bg-surface p-3"
         />
         <button
           type="submit"
           disabled={submitting || !text.trim()}
-          className="self-end rounded bg-foreground px-4 py-2 font-medium text-background disabled:opacity-40"
+          className="self-end rounded bg-accent px-4 py-2 font-medium text-on-accent hover:bg-accent-hover disabled:opacity-40 disabled:hover:bg-accent"
         >
           {submitting ? "Submitting…" : "Submit"}
         </button>
@@ -193,24 +193,24 @@ export default function Home() {
       {duplicate && (
         <div
           role="alert"
-          className="mt-4 rounded border border-amber-500/60 bg-amber-500/10 p-4"
+          className="mt-4 rounded border border-accent bg-surface p-4"
         >
           <p className="font-medium">This looks like an existing idea:</p>
-          <p className="mt-2 whitespace-pre-wrap break-words rounded border border-current/15 p-3">
+          <p className="mt-2 whitespace-pre-wrap break-words rounded border border-line p-3">
             {duplicate.text}
-            <span className="mt-1 block text-sm opacity-70">
+            <span className="mt-1 block text-sm text-muted">
               {duplicate.votes} {duplicate.votes === 1 ? "vote" : "votes"}
             </span>
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {voted.has(duplicate.id) ? (
-              <span className="self-center text-sm opacity-80">
+              <span className="self-center text-sm text-muted">
                 You already upvoted this one.
               </span>
             ) : (
               <button
                 onClick={() => upvoteInstead(duplicate)}
-                className="rounded bg-foreground px-4 py-2 font-medium text-background"
+                className="rounded bg-accent px-4 py-2 font-medium text-on-accent hover:bg-accent-hover"
               >
                 Upvote it instead
               </button>
@@ -218,13 +218,13 @@ export default function Home() {
             <button
               onClick={() => submit(true)}
               disabled={submitting}
-              className="rounded border border-current/30 px-4 py-2 disabled:opacity-40"
+              className="rounded border border-line-strong bg-surface px-4 py-2 hover:bg-background disabled:opacity-40"
             >
               {submitting ? "Submitting…" : "Submit mine anyway"}
             </button>
             <button
               onClick={() => setDuplicate(null)}
-              className="px-2 py-2 text-sm underline opacity-80"
+              className="px-2 py-2 text-sm text-muted underline hover:text-foreground"
             >
               Edit
             </button>
@@ -232,8 +232,8 @@ export default function Home() {
         </div>
       )}
 
-      {notice && <p className="mt-4 text-sm text-green-600">{notice}</p>}
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {notice && <p className="mt-4 text-sm text-success">{notice}</p>}
+      {error && <p className="mt-4 text-sm text-danger">{error}</p>}
 
       <label className="mt-8 block">
         <span className="text-sm font-medium">Already suggested? Search first</span>
@@ -243,14 +243,14 @@ export default function Home() {
           onChange={(e) => setQuery(e.target.value)}
           maxLength={100}
           placeholder="e.g. lunch, wifi, parking"
-          className="mt-1 w-full rounded border border-current/20 bg-transparent p-2"
+          className="mt-1 w-full rounded border border-line-strong bg-surface p-2"
         />
       </label>
 
       <ul className="mt-4 flex flex-col gap-3">
-        {loading && <li className="opacity-60">Loading…</li>}
+        {loading && <li className="text-muted">Loading…</li>}
         {!loading && submissions.length === 0 && (
-          <li className="opacity-60">
+          <li className="text-muted">
             {query.trim()
               ? "No matches. Submit it as a new idea above."
               : "No feedback yet. Be the first."}
@@ -261,13 +261,13 @@ export default function Home() {
           return (
             <li
               key={s.id}
-              className="flex items-start gap-3 rounded border border-current/15 p-3"
+              className="flex items-start gap-3 rounded border border-line bg-surface p-3"
             >
               <button
                 onClick={() => handleVote(s.id)}
                 disabled={hasVoted}
                 aria-label={hasVoted ? "Already upvoted" : "Upvote"}
-                className="flex min-w-12 flex-col items-center rounded border border-current/20 px-2 py-1 disabled:opacity-50"
+                className="flex min-w-12 flex-col items-center rounded border border-line-strong bg-surface px-2 py-1 text-accent hover:bg-accent-soft disabled:border-accent disabled:bg-accent-soft"
               >
                 <span aria-hidden>▲</span>
                 <span className="font-semibold">{s.votes}</span>
