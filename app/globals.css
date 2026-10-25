@@ -43,6 +43,12 @@
   --color-tag-text: #a1a1aa;
   --color-label: #7f7f87;
   --color-brand: #f2704a; /* design-v3 wordmark coral */
+  /* design-v3 solid tones. Defaults match v2 so .theme-v2 still renders as v2. */
+  --color-chrome: transparent; /* header band + mobile bottom bar */
+  --color-chrome-line: #242428;
+  --color-field: rgb(255 255 255 / 0.04); /* search field fill */
+  --color-field-border: rgb(255 255 255 / 0.15);
+  --color-kbd: #27272a;
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -175,11 +181,13 @@ body {
   --color-tag-text: #a89f96;
   --color-label: #958b82;
   --color-brand: #f2704a; /* coral: wordmark "OUT" */
-}
-
-/* Very subtle warm glow behind the header only (never behind the list). */
-.theme-v3 .header-glow {
-  background: radial-gradient(70% 140% at 50% 0%, rgb(245 165 36 / 0.09), transparent 70%);
+  /* Solid tone ladder, no gradients: page #1A1512 < chrome #2B211A (header
+     band + mobile bottom bar) < field #352B24 (search). */
+  --color-chrome: #2b211a; /* text 13.3:1, coral OUT 5.4:1 */
+  --color-chrome-line: #3d3027;
+  --color-field: #352b24; /* text 11.7:1, placeholder 5.3:1 */
+  --color-field-border: #7a6b60; /* 3.5:1 vs page: visible input boundary */
+  --color-kbd: #3a2f28; /* "/" hint, muted text 5.0:1 */
 }
 
 /* Category tag colours: muted tints, each 7.4–8.2:1. Unlayered, so these

@@ -283,7 +283,7 @@ export default function Home() {
           (see globals.css); change it to .theme-v2 to get v2's colours back.
           font-sans is Geist, which has a real medium weight; Arial doesn't. */}
       <div className="theme-v3 flex flex-1 flex-col bg-background font-sans text-foreground">
-        <header className="header-glow border-b border-line px-4 pt-7 pb-6 text-center sm:px-6 sm:pt-10 sm:pb-8">
+        <header className="border-b border-chrome-line bg-chrome px-4 pt-7 pb-6 text-center sm:px-6 sm:pt-10 sm:pb-8">
           {/* Icon + wordmark lockup, centered as one group. The icon is
               decorative; the heading text is "SHOUTOUT". */}
           <h1 className="flex items-center justify-center gap-2.5 font-display text-[40px] leading-none tracking-[-0.03em] sm:gap-4 sm:text-7xl">
@@ -432,13 +432,13 @@ export default function Home() {
                 maxLength={100}
                 placeholder="Search"
                 aria-keyshortcuts="/"
-                className="peer h-11 w-full rounded-lg border border-foreground/15 bg-foreground/[0.04] pr-12 pl-10 text-base outline-none transition-colors hover:border-foreground/25 focus:border-accent"
+                className="peer h-11 w-full rounded-lg border border-field-border bg-field pr-12 pl-10 text-base outline-none transition-colors hover:border-muted focus:border-accent"
               />
               {/* Only on devices with a precise pointer (i.e. a keyboard is
                   likely) and not on phones, where shortcuts don't apply. */}
               <kbd
                 aria-hidden
-                className={`pointer-events-none absolute right-2.5 hidden h-6 min-w-6 items-center justify-center rounded border border-foreground/10 bg-tag px-1.5 font-sans text-xs font-medium text-tag-text sm:pointer-fine:flex peer-focus:!hidden ${
+                className={`pointer-events-none absolute right-2.5 hidden h-6 min-w-6 items-center justify-center rounded bg-kbd px-1.5 font-sans text-xs font-medium text-muted sm:pointer-fine:flex peer-focus:!hidden ${
                   query ? "!hidden" : ""
                 }`}
               >
@@ -541,7 +541,7 @@ export default function Home() {
         </main>
 
         {!composerOpen && (
-          <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-background px-4 pt-2.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] sm:hidden">
+          <div className="fixed inset-x-0 bottom-0 z-10 border-t border-chrome-line bg-chrome px-4 pt-2.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] sm:hidden">
             <button
               onClick={openComposer}
               aria-expanded={composerOpen}
