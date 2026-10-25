@@ -42,6 +42,7 @@
   --color-tag: #27272a;
   --color-tag-text: #a1a1aa;
   --color-label: #7f7f87;
+  --color-brand: #f2704a; /* design-v3 wordmark coral */
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -147,6 +148,49 @@ body {
   --color-tag-text: #a1a1aa; /* 5.8:1 on the badge */
   --color-label: #7f7f87; /* column labels; #71717a is 3.9:1, under AA */
 }
+
+/*
+  ── design-v3 (warmth overhaul, student page only) ───────────────────────
+  Same token names as v2, warmer values; the page wrapper uses .theme-v3.
+  Swap the wrapper class back to .theme-v2 to compare/revert. Contrast:
+  text 15.3:1, muted 6.9:1, amber as text 8.9:1, labels 5.4:1.
+  Amber is too light for white text (2.0:1), so on-accent is espresso (8.9:1).
+*/
+.theme-v3 {
+  --color-background: #1a1512; /* warm espresso-charcoal */
+  --color-surface: #241d19;
+  --color-sunken: #140f0d;
+  --color-foreground: #f2ebe3; /* warm off-white */
+  --color-muted: #a89f96; /* warm gray */
+  --color-line: #2e2621;
+  --color-line-strong: #85796f; /* input boundary, 3.9:1 */
+  --color-accent: #f5a524; /* amber: buttons, focus, active upvote */
+  --color-accent-hover: #e0921a;
+  --color-accent-text: #f5a524;
+  --color-accent-soft: #3a2a12;
+  --color-on-accent: #1a1512;
+  --color-toast: #2c241f;
+  --color-vote-tint: #3a2a12; /* amber tint; amber on it 6.8:1 */
+  --color-tag: #2c241f; /* fallback tag / kbd hint */
+  --color-tag-text: #a89f96;
+  --color-label: #958b82;
+  --color-brand: #f2704a; /* coral: wordmark "OUT" */
+}
+
+/* Very subtle warm glow behind the header only (never behind the list). */
+.theme-v3 .header-glow {
+  background: radial-gradient(70% 140% at 50% 0%, rgb(245 165 36 / 0.09), transparent 70%);
+}
+
+/* Category tag colours: muted tints, each 7.4–8.2:1. Unlayered, so these
+   override the neutral bg-tag/text-tag-text utilities on the same element. */
+.theme-v3 .tag[data-category="academics"] { background: #272641; color: #b7b9ee; }
+.theme-v3 .tag[data-category="facilities"] { background: #362b17; color: #e6c27e; }
+.theme-v3 .tag[data-category="food"] { background: #232e1d; color: #abcb92; }
+.theme-v3 .tag[data-category="tech"] { background: #2e2340; color: #cdb3ec; }
+.theme-v3 .tag[data-category="wellbeing"] { background: #182e2b; color: #90cec4; }
+.theme-v3 .tag[data-category="getting-around"] { background: #3a2618; color: #eeac7e; }
+.theme-v3 .tag[data-category="campus-life"] { background: #3a2027; color: #eba7b7; }
 
 /* Transient confirmation toast (app/page.tsx): slides up, fades out. */
 .toast {

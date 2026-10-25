@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { categoryFor } from "@/lib/categories";
 import type { Submission } from "@/lib/types";
@@ -278,13 +279,26 @@ export default function Home() {
           logo was blended into. */}
       <Splash />
 
-      {/* design-v2: .theme-v2 swaps in the softer palette for this page only
-          (see globals.css). font-sans is Geist, which has a real medium
-          weight; Arial doesn't. */}
-      <div className="theme-v2 flex flex-1 flex-col bg-background font-sans text-foreground">
-        <header className="border-b border-line px-4 pt-7 pb-6 text-center sm:px-6 sm:pt-10 sm:pb-8">
-          <h1 className="font-display text-[44px] leading-none tracking-[-0.03em] sm:text-7xl">
-            SHOUT<span className="text-accent-text">OUT</span>
+      {/* design-v3: .theme-v3 swaps in the warm palette for this page only
+          (see globals.css); change it to .theme-v2 to get v2's colours back.
+          font-sans is Geist, which has a real medium weight; Arial doesn't. */}
+      <div className="theme-v3 flex flex-1 flex-col bg-background font-sans text-foreground">
+        <header className="header-glow border-b border-line px-4 pt-7 pb-6 text-center sm:px-6 sm:pt-10 sm:pb-8">
+          {/* Icon + wordmark lockup, centered as one group. The icon is
+              decorative; the heading text is "SHOUTOUT". */}
+          <h1 className="flex items-center justify-center gap-2.5 font-display text-[40px] leading-none tracking-[-0.03em] sm:gap-4 sm:text-7xl">
+            <Image
+              src="/loudspeaker-icon.webp"
+              alt=""
+              width={240}
+              height={219}
+              loading="eager"
+              unoptimized
+              className="h-11 w-auto shrink-0 sm:h-[72px]"
+            />
+            <span>
+              SHOUT<span className="text-brand">OUT</span>
+            </span>
           </h1>
           <p className="mt-3 text-lg leading-snug font-semibold text-balance sm:mt-4 sm:text-[22px]">
             Feedback — what should change around here?
@@ -418,13 +432,13 @@ export default function Home() {
                 maxLength={100}
                 placeholder="Search"
                 aria-keyshortcuts="/"
-                className="peer h-11 w-full rounded-lg border border-white/15 bg-white/[0.04] pr-12 pl-10 text-base outline-none transition-colors hover:border-white/25 focus:border-accent"
+                className="peer h-11 w-full rounded-lg border border-foreground/15 bg-foreground/[0.04] pr-12 pl-10 text-base outline-none transition-colors hover:border-foreground/25 focus:border-accent"
               />
               {/* Only on devices with a precise pointer (i.e. a keyboard is
                   likely) and not on phones, where shortcuts don't apply. */}
               <kbd
                 aria-hidden
-                className={`pointer-events-none absolute right-2.5 hidden h-6 min-w-6 items-center justify-center rounded border border-white/10 bg-tag px-1.5 font-sans text-xs font-medium text-tag-text sm:pointer-fine:flex peer-focus:!hidden ${
+                className={`pointer-events-none absolute right-2.5 hidden h-6 min-w-6 items-center justify-center rounded border border-foreground/10 bg-tag px-1.5 font-sans text-xs font-medium text-tag-text sm:pointer-fine:flex peer-focus:!hidden ${
                   query ? "!hidden" : ""
                 }`}
               >
@@ -511,7 +525,10 @@ export default function Home() {
                         {s.text}
                       </p>
                       {category && (
-                        <span className="mt-2 inline-block rounded bg-tag px-1.5 py-0.5 text-[11px] leading-tight font-semibold tracking-[0.06em] text-tag-text uppercase">
+                        <span
+                          data-category={category.toLowerCase().replace(/\s+/g, "-")}
+                          className="tag mt-2 inline-block rounded bg-tag px-1.5 py-0.5 text-[11px] leading-tight font-semibold tracking-[0.06em] text-tag-text uppercase"
+                        >
                           {category}
                         </span>
                       )}
