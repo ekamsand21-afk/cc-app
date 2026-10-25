@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Submission } from "@/lib/types";
+import Splash from "./Splash";
 
 const VOTED_KEY = "voted-submissions";
 
@@ -189,6 +190,7 @@ export default function Home() {
 
   return (
     <>
+      <Splash />
       <header className="border-b border-line px-3 pt-6 pb-5 text-center sm:px-6 sm:pt-9 sm:pb-7">
         <h1 className="font-display text-[44px] leading-none tracking-[0.01em] sm:text-7xl">
           SHOUT<span className="text-accent-text">OUT</span>

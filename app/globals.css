@@ -58,3 +58,58 @@ body {
 ::placeholder {
   color: var(--color-muted);
 }
+
+/*
+  Splash (app/Splash.tsx), 1.5s total, plays once per page load:
+  0–450ms logo fades in and scales up; holds; 1050–1500ms the veil fades out.
+  `forwards` keeps the last frame (opacity 0, visibility hidden), so a stuck
+  splash can never block clicks even before React removes it.
+*/
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-background);
+  animation: splash-veil 1.5s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+.splash-logo {
+  width: clamp(180px, 58vw, 260px);
+  height: auto;
+  animation: splash-logo 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes splash-veil {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes splash-logo {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash {
+    display: none;
+  }
+}
