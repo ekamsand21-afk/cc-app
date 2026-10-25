@@ -37,6 +37,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  // Set when the server thinks the draft repeats an existing idea.
+  const [duplicate, setDuplicate] = useState<Submission | null>(null);
 
   // Debounced search: wait until typing pauses, and abort the previous request
   // so a slow response for "lun" can't overwrite the results for "lunch".
@@ -75,18 +78,24 @@ export default function Home() {
     });
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  // force = the student saw the suggested match and wants to post anyway.
+  async function submit(force: boolean) {
     setError(null);
+    setNotice(null);
     setSubmitting(true);
     try {
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, force }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+      if (data.duplicate) {
+        setDuplicate(data.duplicate);
+        return;
+      }
+      setDuplicate(null);
       setSubmissions((prev) => rank([data, ...prev]));
       // The author's own submission already counts as their vote.
       markVoted(data.id);
@@ -100,8 +109,30 @@ export default function Home() {
     }
   }
 
-  async function handleVote(id: string) {
-    if (voted.has(id)) return;
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    submit(false);
+  }
+
+  async function upvoteInstead(item: Submission) {
+    const votes = await handleVote(item.id);
+    if (votes === null) return;
+    // The match may be hidden by an active search, so make sure it's listed.
+    setSubmissions((prev) =>
+      rank(
+        prev.some((s) => s.id === item.id)
+          ? prev
+          : [{ ...item, votes }, ...prev],
+      ),
+    );
+    setDuplicate(null);
+    setText("");
+    setNotice("Thanks — your vote was added to the existing idea.");
+  }
+
+  // Returns the new vote count, or null if the vote didn't go through.
+  async function handleVote(id: string): Promise<number | null> {
+    if (voted.has(id)) return null;
     markVoted(id);
     setError(null);
     try {
@@ -115,6 +146,7 @@ export default function Home() {
       setSubmissions((prev) =>
         rank(prev.map((s) => (s.id === id ? { ...s, votes: data.votes } : s))),
       );
+      return data.votes;
     } catch (err) {
       // Roll back so the student can try again.
       setVoted((prev) => {
@@ -124,6 +156,7 @@ export default function Home() {
         return next;
       });
       setError(err instanceof Error && err.message ? err.message : "Could not vote.");
+      return null;
     }
   }
 
@@ -137,7 +170,12 @@ export default function Home() {
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-2">
         <textarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            // Editing the draft makes any earlier match stale.
+            setDuplicate(null);
+            setNotice(null);
+          }}
           maxLength={500}
           rows={3}
           placeholder="What should our school change?"
@@ -152,6 +190,49 @@ export default function Home() {
         </button>
       </form>
 
+      {duplicate && (
+        <div
+          role="alert"
+          className="mt-4 rounded border border-amber-500/60 bg-amber-500/10 p-4"
+        >
+          <p className="font-medium">This looks like an existing idea:</p>
+          <p className="mt-2 whitespace-pre-wrap break-words rounded border border-current/15 p-3">
+            {duplicate.text}
+            <span className="mt-1 block text-sm opacity-70">
+              {duplicate.votes} {duplicate.votes === 1 ? "vote" : "votes"}
+            </span>
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {voted.has(duplicate.id) ? (
+              <span className="self-center text-sm opacity-80">
+                You already upvoted this one.
+              </span>
+            ) : (
+              <button
+                onClick={() => upvoteInstead(duplicate)}
+                className="rounded bg-foreground px-4 py-2 font-medium text-background"
+              >
+                Upvote it instead
+              </button>
+            )}
+            <button
+              onClick={() => submit(true)}
+              disabled={submitting}
+              className="rounded border border-current/30 px-4 py-2 disabled:opacity-40"
+            >
+              {submitting ? "Submitting…" : "Submit mine anyway"}
+            </button>
+            <button
+              onClick={() => setDuplicate(null)}
+              className="px-2 py-2 text-sm underline opacity-80"
+            >
+              Edit
+            </button>
+          </div>
+        </div>
+      )}
+
+      {notice && <p className="mt-4 text-sm text-green-600">{notice}</p>}
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
       <label className="mt-8 block">

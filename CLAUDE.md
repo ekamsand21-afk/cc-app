@@ -22,10 +22,11 @@ This is an entry for the **Congressional App Challenge (CA-14)**. Two-person tea
 - Next.js 16 (App Router, TS, Tailwind, no `src/`). This Next version differs from older docs — check `node_modules/next/dist/docs/` before using unfamiliar APIs (see AGENTS.md).
 - Code map:
   - `lib/supabase.ts` — service-role client, guarded by `import "server-only"` so a client import fails the build.
-  - `app/api/submit/route.ts` — POST `{ text }`, trimmed, 1–500 chars, inserts with `votes = 1`.
+  - `app/api/submit/route.ts` — POST `{ text, force? }`, trimmed, 1–500 chars, inserts with `votes = 1`. Unless `force === true`, first runs the keyword duplicate check; on a match returns `200 { duplicate, score }` and inserts nothing. Check fails open (DB error → insert normally).
+  - `lib/dedup.ts` — keyword-overlap matcher (pure, no I/O). Score = shared significant words ÷ words in the shorter text; match needs ≥ `DUPLICATE_THRESHOLD` (0.5) **and** ≥ `MIN_SHARED_WORDS` (2). Tune those two constants or `STOPWORDS`. Separate from the embedding/`match_submission` stretch path, which is untouched.
   - `app/api/submissions/route.ts` — GET, ranked by `votes` desc, `created_at` desc. Optional `q` (ILIKE, `%`/`_` escaped), `sort=top|new`, `days=N`. Limit 500.
   - `app/api/vote/route.ts` — POST `{ id }`. supabase-js can't do `votes = votes + 1`, so it does compare-and-swap (`update … where votes = <read value>`) with up to 10 jittered retries. Tested: 20 concurrent votes, zero lost.
-  - `app/page.tsx` — student page (client component): submit form, debounced search (aborts stale requests), ranked list, upvote. Voted ids stored in `localStorage` key `voted-submissions`; the author's own submission counts as their vote.
+  - `app/page.tsx` — student page (client component): submit form with "looks like an existing idea" prompt (Upvote it instead / Submit mine anyway / Edit), debounced search (aborts stale requests), ranked list, upvote. Voted ids stored in `localStorage` key `voted-submissions`; the author's own submission counts as their vote.
   - `app/staff/page.tsx` (server, sets `noindex` metadata) → `StaffDashboard.tsx` (client): stats, search, time range, sort. Unlisted, not protected. Don't add a `staff/layout.tsx` — a second layout breaks Next 16's generated `LayoutProps` type check against the root layout.
   - `lib/types.ts` — shared `Submission` type (safe for client import).
 - Env: `.env.local` (git-ignored) holds `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — this must be the **`sb_secret_…`** key, not `sb_publishable_…`. The same two vars are set in Vercel → Production.

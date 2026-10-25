@@ -11,6 +11,7 @@ Built for the Congressional App Challenge (CA-14).
 
 - **Submit:** anonymous, with no login, so students actually use it.
 - **Search first:** before posting, students can search existing feedback and upvote a match instead of adding a duplicate.
+- **Duplicate check:** if a new post looks like an existing one, the app shows the match and offers "upvote it instead". The student can still post their own.
 - **Upvote:** one vote per item per device. The author's own post counts as their vote.
 - **Staff dashboard:** feedback ranked by votes, with search, a time-range filter (7 days / 30 days / all time), and newest-first sorting.
 
@@ -29,6 +30,8 @@ Built for the Congressional App Challenge (CA-14).
 **One vote per device, no accounts.** Voted items are remembered in the browser's `localStorage`. That's not tamper-proof (clearing browser data resets it), but it stops casual double-voting without making students log in.
 
 **Search.** `GET /api/submissions?q=…` does a case-insensitive `ILIKE` match in Postgres. `%` and `_` are escaped, so a search for "100%" means the literal text and doesn't act as a wildcard. The search box waits for a pause in typing and cancels the previous request, so an older, slower response can't replace newer results.
+
+**Duplicate check.** Before inserting, `POST /api/submit` compares the new post's keywords with every existing post (`lib/dedup.ts`). It lowercases the text, strips punctuation, drops filler words ("the", "please", "really"…) and folds word forms ("towels" → "towel", "dropping" → "drop"). The score is shared keywords ÷ keywords in the *shorter* post, so a short post can still match a detailed one. A match needs at least 50% overlap **and** at least 2 shared keywords, so "wifi is bad" doesn't match every wifi post on one word. On a match, nothing is inserted; the student sees the existing post and can upvote it or post anyway. If the check itself fails, the post goes through normally, so it can never block a submission.
 
 ## Run locally
 
@@ -55,4 +58,4 @@ Requires Node.js 20+ and a Supabase project.
 ## Limitations and next steps
 
 - The staff dashboard isn't password-protected yet. It shows only what the public page already shows; real staff login is planned.
-- Planned: AI-powered duplicate detection (match new posts against existing ones by meaning, not just keywords) and automatic grouping of feedback by theme.
+- The duplicate check matches keywords, not meaning: "the fountains are gross" and "we need clean drinking water" share no words, so they won't match. Planned: meaning-based duplicate detection with text embeddings, and automatic grouping of feedback by theme.
