@@ -37,6 +37,7 @@
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-bungee), Impact, sans-serif; /* student page wordmark + column labels only */
 }
 
 :root {

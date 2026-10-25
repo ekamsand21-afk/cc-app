@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bungee, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,16 +12,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Display face for the student page's wordmark and column labels only
+// (the `font-display` utility). Body text stays a plain readable sans.
+const bungee = Bungee({
+  variable: "--font-bungee",
+  weight: "400",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
-  title: "School Feedback",
-  description: "Anonymous student feedback, ranked by votes",
+  title: "SHOUTOUT",
+  description: "Anonymous student feedback — what should change around here?",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${bungee.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

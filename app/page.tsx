@@ -189,31 +189,16 @@ export default function Home() {
 
   return (
     <>
-      <header className="border-b border-line">
-        <div className="mx-auto flex w-full max-w-4xl items-end justify-between gap-6 px-3 pt-5 pb-4 sm:px-6 sm:pt-7 sm:pb-5">
-          <div>
-            <h1 className="text-[28px] leading-none font-extrabold tracking-[-0.02em] sm:text-[34px]">
-              SpeakUp
-            </h1>
-            <p className="mt-2.5 text-[15px] leading-snug font-semibold sm:mt-3 sm:text-base">
-              Anonymous feedback for our school — what should change?
-            </p>
-            <p className="mt-0.5 text-sm leading-snug text-muted">
-              Upvote the ideas you agree with, or add your own.
-            </p>
-          </div>
-          <button
-            onClick={openComposer}
-            aria-expanded={composerOpen}
-            aria-controls="composer"
-            className="hidden h-11 shrink-0 items-center rounded bg-accent px-4 font-bold text-on-accent hover:bg-accent-hover sm:inline-flex"
-          >
-            + Add feedback
-          </button>
-        </div>
+      <header className="border-b border-line px-3 pt-6 pb-5 text-center sm:px-6 sm:pt-9 sm:pb-7">
+        <h1 className="font-display text-[44px] leading-none tracking-[0.01em] sm:text-7xl">
+          SHOUT<span className="text-accent-text">OUT</span>
+        </h1>
+        <p className="mt-3 text-lg leading-snug font-bold text-balance sm:mt-3.5 sm:text-[22px]">
+          Feedback — what should change around here?
+        </p>
       </header>
 
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-3 px-3 pt-3 pb-28 sm:px-6 sm:pt-5 sm:pb-10">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-3.5 px-3 pt-3.5 pb-32 sm:gap-4 sm:px-6 sm:pt-6 sm:pb-12">
         {composerOpen && (
           <section
             id="composer"
@@ -222,12 +207,12 @@ export default function Home() {
             className="rounded border border-line-strong bg-surface"
           >
             <div className="flex items-center justify-between border-b border-line px-3 py-2.5">
-              <h2 className="text-base font-extrabold">Add feedback</h2>
-              <span className="text-xs text-muted">Anonymous</span>
+              <h2 className="text-lg font-extrabold">Add feedback</h2>
+              <span className="text-sm text-muted">Anonymous</span>
             </div>
             <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-3">
               <label className="flex flex-col gap-1.5">
-                <span className="text-sm text-muted">What should our school change?</span>
+                <span className="text-base text-muted">What should our school change?</span>
                 <textarea
                   ref={textareaRef}
                   value={text}
@@ -239,13 +224,13 @@ export default function Home() {
                   }}
                   maxLength={500}
                   rows={3}
-                  className="w-full rounded border border-line-strong bg-background p-2.5"
+                  className="w-full rounded border border-line-strong bg-background p-3 text-lg"
                 />
               </label>
 
               {duplicate && (
                 <div role="alert" className="rounded border border-accent bg-background">
-                  <p className="border-b border-line px-3 py-2.5 text-sm font-extrabold">
+                  <p className="border-b border-line px-3 py-2.5 text-base font-extrabold">
                     This looks like an existing idea
                   </p>
                   <div className="grid grid-cols-[3.25rem_minmax(0,1fr)]">
@@ -256,20 +241,20 @@ export default function Home() {
                         <span className="sr-only"> votes</span>
                       </span>
                     </div>
-                    <p className="px-3 py-2.5 text-sm leading-snug break-words whitespace-pre-wrap">
+                    <p className="px-3 py-2.5 text-base leading-snug break-words whitespace-pre-wrap">
                       {duplicate.text}
                     </p>
                   </div>
                   <div className="grid grid-cols-2 border-t border-line">
                     {voted.has(duplicate.id) ? (
-                      <span className="flex min-h-12 items-center justify-center border-r border-line px-2 text-center text-sm text-muted">
+                      <span className="flex min-h-14 items-center justify-center border-r border-line px-2 text-center text-base text-muted">
                         You already upvoted this one.
                       </span>
                     ) : (
                       <button
                         type="button"
                         onClick={() => upvoteInstead(duplicate)}
-                        className="min-h-12 border-r border-line bg-accent px-2 text-sm font-extrabold text-on-accent hover:bg-accent-hover"
+                        className="min-h-14 border-r border-line bg-accent px-2 text-base font-extrabold text-on-accent hover:bg-accent-hover"
                       >
                         Upvote it instead
                       </button>
@@ -278,7 +263,7 @@ export default function Home() {
                       type="button"
                       onClick={() => submit(true)}
                       disabled={submitting}
-                      className="min-h-12 bg-surface px-2 text-sm hover:bg-sunken disabled:opacity-40"
+                      className="min-h-14 bg-surface px-2 text-base hover:bg-sunken disabled:opacity-40"
                     >
                       {submitting ? "Submitting…" : "Submit mine anyway"}
                     </button>
@@ -290,14 +275,14 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={closeComposer}
-                  className="h-12 rounded border border-line-strong bg-surface px-5 hover:bg-sunken sm:h-11"
+                  className="h-14 rounded border border-line-strong bg-surface px-6 text-lg hover:bg-sunken"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting || !text.trim()}
-                  className="h-12 rounded bg-accent px-5 font-extrabold text-on-accent hover:bg-accent-hover disabled:opacity-40 disabled:hover:bg-accent sm:h-11"
+                  className="h-14 rounded bg-accent px-6 text-lg font-extrabold text-on-accent hover:bg-accent-hover disabled:opacity-40 disabled:hover:bg-accent"
                 >
                   {submitting ? "Submitting…" : "Submit"}
                 </button>
@@ -307,21 +292,17 @@ export default function Home() {
         )}
 
         {notice && (
-          <p role="status" className="rounded border border-line bg-surface px-3 py-2 text-sm text-success">
+          <p role="status" className="rounded border border-line bg-surface px-3.5 py-2.5 text-base text-success">
             {notice}
           </p>
         )}
         {error && (
-          <p role="alert" className="rounded border border-line bg-surface px-3 py-2 text-sm text-danger">
+          <p role="alert" className="rounded border border-line bg-surface px-3.5 py-2.5 text-base text-danger">
             {error}
           </p>
         )}
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-          <h2 className="text-xs font-bold tracking-[0.08em] whitespace-nowrap text-muted uppercase">
-            {searching ? "Matches" : "Top ideas"}
-            {!loading && ` · ${submissions.length}`}
-          </h2>
+        <div className="flex gap-2.5">
           <label className="flex flex-1">
             <span className="sr-only">Search feedback</span>
             <input
@@ -330,21 +311,32 @@ export default function Home() {
               onChange={(e) => setQuery(e.target.value)}
               maxLength={100}
               placeholder="Search — already suggested?"
-              className="h-11 w-full rounded border border-line-strong bg-surface px-3 sm:h-10"
+              className="h-14 w-full rounded border border-line-strong bg-surface px-4 text-lg"
             />
           </label>
+          <button
+            onClick={openComposer}
+            aria-expanded={composerOpen}
+            aria-controls="composer"
+            className="hidden h-14 shrink-0 items-center rounded bg-accent px-6 text-lg font-extrabold text-on-accent hover:bg-accent-hover sm:inline-flex"
+          >
+            + Add feedback
+          </button>
         </div>
 
         <div>
+          {/* The visible column labels are decorative, so give the list a real
+              heading for screen-reader navigation. */}
+          <h2 className="sr-only">Ideas</h2>
           {/* Column labels share the rows' grid so they line up at every width.
               Hidden from screen readers: each vote button already says its count. */}
           {submissions.length > 0 && (
             <div
               aria-hidden
-              className="grid grid-cols-[4rem_minmax(0,1fr)] px-px pb-1.5 text-[11px] font-bold tracking-[0.1em] text-muted uppercase sm:grid-cols-[4.5rem_minmax(0,1fr)]"
+              className="grid grid-cols-[5.5rem_minmax(0,1fr)] px-px pb-2 font-display text-[19px] leading-none uppercase sm:grid-cols-[6.5rem_minmax(0,1fr)] sm:text-2xl"
             >
-              <span className="text-center">Votes</span>
-              <span className="px-3 sm:px-4">Ideas</span>
+              <span className="text-center text-accent-text">Votes</span>
+              <span className="px-3.5 sm:px-[18px]">Ideas</span>
             </div>
           )}
           <ul className="divide-y divide-line overflow-hidden rounded border border-line">
@@ -361,16 +353,16 @@ export default function Home() {
               return (
                 <li
                   key={s.id}
-                  className="grid grid-cols-[4rem_minmax(0,1fr)] bg-surface sm:grid-cols-[4.5rem_minmax(0,1fr)]"
+                  className="grid grid-cols-[5.5rem_minmax(0,1fr)] bg-surface sm:grid-cols-[6.5rem_minmax(0,1fr)]"
                 >
                   <button
                     onClick={() => handleVote(s.id)}
                     disabled={hasVoted}
                     aria-label={`${hasVoted ? "Already upvoted" : "Upvote"}, ${s.votes} ${s.votes === 1 ? "vote" : "votes"}`}
-                    className="flex min-h-16 flex-col items-center justify-center border-r border-line bg-sunken text-accent-text hover:bg-accent-soft disabled:bg-accent disabled:text-on-accent"
+                    className="flex min-h-[76px] flex-col items-center justify-center border-r border-line bg-sunken text-accent-text hover:bg-accent-soft disabled:bg-accent disabled:text-on-accent"
                   >
-                    <span aria-hidden className="text-[10px] leading-none">▲</span>
-                    <span className="text-xl leading-tight font-extrabold tabular-nums">
+                    <span aria-hidden className="text-xs leading-none">▲</span>
+                    <span className="text-[26px] leading-tight font-extrabold tabular-nums sm:text-[28px]">
                       {s.votes}
                     </span>
                   </button>
@@ -381,7 +373,7 @@ export default function Home() {
                       edge, so padding would let a third line peek through. */}
                   <p
                     title={s.text}
-                    className="my-3 line-clamp-2 self-center px-3 text-[15px] leading-snug break-words whitespace-pre-wrap sm:px-4 sm:text-base"
+                    className="my-3.5 line-clamp-2 self-center px-3.5 text-lg leading-[1.35] break-words whitespace-pre-wrap sm:px-[18px] sm:text-xl"
                   >
                     {s.text}
                   </p>
@@ -398,7 +390,7 @@ export default function Home() {
             onClick={openComposer}
             aria-expanded={composerOpen}
             aria-controls="composer"
-            className="h-13 w-full rounded bg-accent text-base font-extrabold text-on-accent hover:bg-accent-hover"
+            className="h-15 w-full rounded bg-accent text-xl font-extrabold text-on-accent hover:bg-accent-hover"
           >
             + Add feedback
           </button>
