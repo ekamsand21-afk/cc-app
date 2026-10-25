@@ -18,6 +18,13 @@ const CATEGORIES: [label: string, keywords: string[]][] = [
   ["Facilities", ["bathroom", "bathrooms", "soap", "paper towels", "locker", "lockers", "fountain", "fountains", "water", "lighting", "broken", "repair", "ac", "heat"]],
 ];
 
+// Labels in display order (used for the filter chips).
+export const CATEGORY_LABELS = CATEGORIES.map(([label]) => label);
+
+export function categorySlug(label: string) {
+  return label.toLowerCase().replace(/\s+/g, "-");
+}
+
 const MATCHERS = CATEGORIES.map(([label, words]) => ({
   label,
   // Whole words only, so "ac" doesn't match inside "practice".

@@ -49,10 +49,17 @@
   --color-field: rgb(255 255 255 / 0.04); /* search field fill */
   --color-field-border: rgb(255 255 255 / 0.15);
   --color-kbd: #27272a;
+  /* design-v4 (Bright Pop); only .theme-v4 uses these. */
+  --color-hero: #4b2fe0;
+  --color-hero-soft: #e4deff;
+  --color-sun: #ffd23f;
+  --color-sun-soft: #fff6d6;
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-bungee), Impact, sans-serif; /* student page wordmark + column labels only */
+  --font-heading: var(--font-bricolage), system-ui, sans-serif; /* design-v4 headings */
+  --font-body: var(--font-jakarta), system-ui, sans-serif; /* design-v4 body */
 }
 
 :root {
@@ -227,5 +234,88 @@ body {
   .toast,
   .toast[data-leaving="true"] {
     animation-duration: 1ms;
+  }
+}
+
+/*
+  ── design-v4 "Bright Pop" (student page only) ────────────────────────────
+  Light, friendly palette. Same token names as v2/v3, so the page wrapper's
+  class picks the theme (.theme-v4 here; .theme-v3 / .theme-v2 still work).
+  Contrast: ink 16:1, muted 6.1:1, violet on white 7.6:1, white on violet
+  7.6:1, control borders 3.9:1. Coral never appears as text (2.97:1).
+*/
+.theme-v4 {
+  color-scheme: light; /* native controls (search clear button, scrollbars) */
+  --color-background: #f6f4ff; /* lavender white */
+  --color-surface: #ffffff; /* cards */
+  --color-sunken: #efebff;
+  --color-foreground: #1b1530; /* ink */
+  --color-muted: #5e5878;
+  --color-line: #e4dffa; /* decorative card/section edges */
+  --color-line-strong: #847bad; /* control borders, 3.9:1 on white */
+  --color-accent: #4b2fe0; /* violet: primary actions, voted state, focus */
+  --color-accent-hover: #3e24c4;
+  --color-accent-text: #4b2fe0;
+  --color-accent-soft: #ede8ff;
+  --color-on-accent: #ffffff;
+  --color-danger: #b4183a;
+  --color-success: #5ee0a8; /* on the dark toast */
+  --color-toast: #1b1530;
+  --color-kbd: #f2efff;
+  --color-label: #5e5878;
+  --color-brand: #4b2fe0; /* wordmark "out" */
+  --color-field: #ffffff;
+  --color-field-border: #847bad;
+}
+
+/* The page behind the wrapper (overscroll, safe areas) matches the theme. */
+body:has(.theme-v4) {
+  background: #f6f4ff;
+}
+
+/* Category tags/chips: pastel fills, dark text, each 6.1–7.6:1. */
+.theme-v4 [data-category="academics"] { background: #e6e1ff; color: #3c27b8; }
+.theme-v4 [data-category="facilities"] { background: #fff1c7; color: #7a5300; }
+.theme-v4 [data-category="food"] { background: #ddf6ea; color: #0f5a40; }
+.theme-v4 [data-category="tech"] { background: #ddebff; color: #1e4fa8; }
+.theme-v4 [data-category="wellbeing"] { background: #d9f4f4; color: #11605f; }
+.theme-v4 [data-category="getting-around"] { background: #ffe4d6; color: #8a3a10; }
+.theme-v4 [data-category="campus-life"] { background: #ffe0e8; color: #9a1f45; }
+
+/* Post sheet: a native <dialog> (focus trap, Esc, inert page for free).
+   Bottom sheet on phones, centered card from sm up. */
+.theme-v4-sheet {
+  margin: auto auto 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: 92dvh;
+  border: 0;
+  padding: 0;
+  border-radius: 28px 28px 0 0;
+  background: #ffffff;
+  color: #1b1530;
+}
+.theme-v4-sheet::backdrop {
+  background: rgb(27 21 48 / 0.45);
+}
+@media (min-width: 640px) {
+  .theme-v4-sheet {
+    margin: auto;
+    max-width: 520px;
+    border-radius: 28px;
+  }
+}
+.theme-v4-sheet[open] {
+  animation: sheet-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-v4-sheet[open] {
+    animation: none;
   }
 }
